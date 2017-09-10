@@ -68,8 +68,8 @@ func (c *ApiClient) getClusterId(name string) (string, error) {
 	return "", errors.New("Unknown cluster " + name)
 }
 
-func (c *ApiClient) CreateSnapshot(vmId string) error {
-	s := &Snapshot{Description: "Simple oVirt Snapshot", PersistMemoryState: false}
+func (c *ApiClient) CreateSnapshot(vmId, desc string) error {
+	s := &Snapshot{Description: desc, PersistMemoryState: false}
 	b, err := xml.Marshal(s)
 	if err != nil {
 		return err

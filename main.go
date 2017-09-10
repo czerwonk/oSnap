@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"os"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/czerwonk/simple-ovirt-snapshot/api"
 )
@@ -18,6 +18,7 @@ var (
 	apiPass         = flag.String("api.pass", "", "API password")
 	cluster         = flag.String("cluster", "", "Cluster to filter")
 	apiInsecureCert = flag.Bool("api.insecure-cert", false, "Skip verification for untrusted SSL/TLS certificates")
+	desc            = flag.String("desc", "Simple oVirt Snapshot", "Description to use for the snapshot")
 )
 
 func init() {
@@ -59,7 +60,7 @@ func createSnapshots() error {
 
 	for _, vm := range vms {
 		log.Printf("Creating snapshot for VM: %s", vm.Name)
-		err = a.CreateSnapshot(vm.Id)
+		err = a.CreateSnapshot(vm.Id, *desc)
 		if err != nil {
 			return err
 		}
