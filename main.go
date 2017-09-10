@@ -2,11 +2,8 @@ package main
 
 import (
 	"flag"
-
 	"os"
-
 	"fmt"
-
 	"log"
 
 	"github.com/czerwonk/simple-ovirt-snapshot/api"
