@@ -63,8 +63,6 @@ func createSnapshots() error {
 		if err != nil {
 			return err
 		}
-
-		return nil
 	}
 
 	return nil
