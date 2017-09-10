@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/czerwonk/simple-ovirt-snapshot/api"
+	"github.com/czerwonk/osnap/api"
 )
 
 const version = "0.1"
@@ -23,7 +23,7 @@ var (
 
 func init() {
 	flag.Usage = func() {
-		fmt.Println("Usage: simple-ovirt-snapshot [ ... ]\n\nParameters:")
+		fmt.Println("Usage: osnap [ ... ]\n\nParameters:")
 		fmt.Println()
 		flag.PrintDefaults()
 	}
@@ -45,7 +45,7 @@ func main() {
 }
 
 func printVersion() {
-	fmt.Println("simple-ovirt-snapshot")
+	fmt.Println("osnap - oVirt Snapshot Creator")
 	fmt.Printf("Version: %s\n", version)
 	fmt.Println("Author(s): Daniel Czerwonk")
 }
