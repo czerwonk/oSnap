@@ -45,7 +45,7 @@ func main() {
 }
 
 func printVersion() {
-	fmt.Println("osnap - oVirt Snapshot Creator")
+	fmt.Println("oSnap - oVirt Snapshot Creator")
 	fmt.Printf("Version: %s\n", version)
 	fmt.Println("Author(s): Daniel Czerwonk")
 }
