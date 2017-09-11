@@ -1,4 +1,4 @@
-# osnap
+# oSnap
 [![Build Status](https://travis-ci.org/czerwonk/osnap.svg)](https://travis-ci.org/czerwonk/osnap)
 [![Go Report Card](https://goreportcard.com/badge/github.com/czerwonk/osnap)](https://goreportcard.com/report/github.com/czerwonk/osnap)
 
