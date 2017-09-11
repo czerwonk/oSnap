@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/czerwonk/osnap.svg)](https://travis-ci.org/czerwonk/osnap)
 [![Go Report Card](https://goreportcard.com/badge/github.com/czerwonk/osnap)](https://goreportcard.com/report/github.com/czerwonk/osnap)
 
-Create virtual machine snapshots (using the oVirt API) with one single command per cluster
+Create virtual machine snapshots (using the oVirt API) with one single command
 
 ## Remarks
 this is an early version
