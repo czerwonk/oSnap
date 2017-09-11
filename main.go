@@ -12,7 +12,7 @@ import (
 const version = "0.1"
 
 var (
-	showVersion     = flag.Bool("version", false, "Print version information.")
+	showVersion     = flag.Bool("version", false, "Print version information")
 	apiUrl          = flag.String("api.url", "https://localhost/ovirt-engine/api/", "API REST Endpoint")
 	apiUser         = flag.String("api.user", "user@internal", "API username")
 	apiPass         = flag.String("api.pass", "", "API password")
