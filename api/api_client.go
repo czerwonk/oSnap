@@ -30,8 +30,8 @@ func NewClient(url, user, pass string, insecureCert bool) *ApiClient {
 	return &ApiClient{url: url, user: user, pass: pass, insecureCert: insecureCert, client: c}
 }
 
-func (c *ApiClient) GetVms(clusterId string) ([]Vm, error) {
-	clusterId, err := c.getClusterId(clusterId)
+func (c *ApiClient) GetVms(clusterFilter, vmFilter string) ([]Vm, error) {
+	clusterId, err := c.getClusterId(clusterFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (c *ApiClient) GetVms(clusterId string) ([]Vm, error) {
 
 	res := make([]Vm, 0)
 	for _, v := range vms.Vm {
-		if v.Cluster.Id == clusterId {
+		if (v.Cluster.Id == clusterId || len(clusterFilter) == 0) && (v.Name == vmFilter || len(vmFilter) == 0) {
 			res = append(res, v)
 		}
 	}
@@ -53,6 +53,10 @@ func (c *ApiClient) GetVms(clusterId string) ([]Vm, error) {
 }
 
 func (c *ApiClient) getClusterId(name string) (string, error) {
+	if len(name) == 0 {
+		return "", nil
+	}
+
 	clusters := Clusters{}
 	err := c.sendAndParse(fmt.Sprintf("clusters?search=%s", name), "GET", &clusters)
 	if err != nil {

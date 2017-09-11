@@ -9,15 +9,16 @@ import (
 	"github.com/czerwonk/osnap/api"
 )
 
-const version = "0.1"
+const version = "0.1.1"
 
 var (
 	showVersion     = flag.Bool("version", false, "Print version information")
 	apiUrl          = flag.String("api.url", "https://localhost/ovirt-engine/api/", "API REST Endpoint")
 	apiUser         = flag.String("api.user", "user@internal", "API username")
 	apiPass         = flag.String("api.pass", "", "API password")
-	cluster         = flag.String("cluster", "", "Cluster to filter")
 	apiInsecureCert = flag.Bool("api.insecure-cert", false, "Skip verification for untrusted SSL/TLS certificates")
+	cluster         = flag.String("cluster", "", "Cluster name to filter")
+	vm              = flag.String("vm", "", "VM name to filter")
 	desc            = flag.String("desc", "oSnap generated snapshot", "Description to use for the snapshot")
 )
 
@@ -53,7 +54,7 @@ func printVersion() {
 func createSnapshots() error {
 	a := api.NewClient(*apiUrl, *apiUser, *apiPass, *apiInsecureCert)
 
-	vms, err := a.GetVms(*cluster)
+	vms, err := a.GetVms(*cluster, *vm)
 	if err != nil {
 		return err
 	}
