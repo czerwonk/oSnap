@@ -18,7 +18,7 @@ var (
 	apiPass         = flag.String("api.pass", "", "API password")
 	cluster         = flag.String("cluster", "", "Cluster to filter")
 	apiInsecureCert = flag.Bool("api.insecure-cert", false, "Skip verification for untrusted SSL/TLS certificates")
-	desc            = flag.String("desc", "Simple oVirt Snapshot", "Description to use for the snapshot")
+	desc            = flag.String("desc", "oSnap generated snapshot", "Description to use for the snapshot")
 )
 
 func init() {
