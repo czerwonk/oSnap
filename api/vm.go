@@ -5,8 +5,8 @@ type Vms struct {
 }
 
 type Vm struct {
-	Id      string `xml:"id,attr"`
-	Name    string `xml:"name"`
+	Id      string `xml:"id,attr,omitempty"`
+	Name    string `xml:"name,omitempty"`
 	Cluster struct {
 		Id string `xml:"id,attr"`
 	} `xml:"cluster,omitempty"`

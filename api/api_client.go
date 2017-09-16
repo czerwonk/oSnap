@@ -18,16 +18,19 @@ type ApiClient struct {
 	user         string
 	pass         string
 	insecureCert bool
+	debug        bool
 	client       *http.Client
 }
 
-func NewClient(url, user, pass string, insecureCert bool) *ApiClient {
+const snapshotSuffix = " - created by oSnap"
+
+func NewClient(url, user, pass string, insecureCert, debugMode bool) *ApiClient {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureCert},
 	}
 	c := &http.Client{Transport: tr}
 
-	return &ApiClient{url: url, user: user, pass: pass, insecureCert: insecureCert, client: c}
+	return &ApiClient{url: url, user: user, pass: pass, insecureCert: insecureCert, client: c, debug: debugMode}
 }
 
 func (c *ApiClient) GetVms(clusterFilter, vmFilter string) ([]Vm, error) {
@@ -37,7 +40,7 @@ func (c *ApiClient) GetVms(clusterFilter, vmFilter string) ([]Vm, error) {
 	}
 
 	vms := Vms{}
-	err = c.sendAndParse("vms", "GET", &vms)
+	err = c.sendAndParse("vms", "GET", &vms, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +61,7 @@ func (c *ApiClient) getClusterId(name string) (string, error) {
 	}
 
 	clusters := Clusters{}
-	err := c.sendAndParse(fmt.Sprintf("clusters?search=%s", name), "GET", &clusters)
+	err := c.sendAndParse(fmt.Sprintf("clusters?search=%s", name), "GET", &clusters, nil)
 	if err != nil {
 		return "", err
 	}
@@ -72,20 +75,65 @@ func (c *ApiClient) getClusterId(name string) (string, error) {
 	return "", errors.New("Unknown cluster " + name)
 }
 
-func (c *ApiClient) CreateSnapshot(vmId, desc string) error {
-	s := &Snapshot{Description: desc, PersistMemoryState: false}
+func (c *ApiClient) CreateSnapshot(vmId, desc string) (*Snapshot, error) {
+	s := &Snapshot{Description: desc + snapshotSuffix, PersistMemoryState: false}
 	b, err := xml.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.debug {
+		log.Println(string(b))
+	}
+
+	r := bytes.NewReader(b)
+	res := Snapshot{}
+	err = c.sendAndParse(fmt.Sprintf("vms/%s/snapshots", vmId), "POST", &res, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func (c *ApiClient) GetSnapshot(vmId, snapshotid string) (*Snapshot, error) {
+	res := Snapshot{}
+	err := c.sendAndParse(fmt.Sprintf("vms/%s/snapshots/%s", vmId, snapshotid), "GET", &res, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func (c *ApiClient) GetCreatedSnapshots(vmId string) ([]Snapshot, error) {
+	res := Snapshots{}
+	err := c.sendAndParse(fmt.Sprintf("vms/%s/snapshots", vmId), "GET", &res, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	snaps := make([]Snapshot, 0)
+	for _, s := range res.Snapshot {
+		if strings.HasSuffix(s.Description, snapshotSuffix) {
+			snaps = append(snaps, s)
+		}
+	}
+
+	return snaps, err
+}
+
+func (c *ApiClient) DeleteSnapshot(vmId, snapShotId string) error {
+	_, err := c.sendRequest(fmt.Sprintf("vms/%s/snapshots/%s", vmId, snapShotId), "DELETE", nil)
 	if err != nil {
 		return err
 	}
 
-	r := bytes.NewReader(b)
-	_, err = c.sendRequest(fmt.Sprintf("vms/%s/snapshots", vmId), "POST", r)
-	return err
+	return nil
 }
 
-func (c *ApiClient) sendAndParse(path, method string, res interface{}) error {
-	b, err := c.sendRequest(path, method, nil)
+func (c *ApiClient) sendAndParse(path, method string, res interface{}, body io.Reader) error {
+	b, err := c.sendRequest(path, method, body)
 	if err != nil {
 		return err
 	}
@@ -116,5 +164,15 @@ func (c *ApiClient) sendRequest(path, method string, body io.Reader) ([]byte, er
 	}
 
 	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println(resp.Status)
+	if c.debug {
+		log.Println(string(b))
+	}
+
+	return b, err
 }
