@@ -1,5 +1,5 @@
 # oSnap
-[![Build Status](https://travis-ci.org/czerwonk/osnap.svg)](https://travis-ci.org/czerwonk/osnap)
+[![Build Status](https://travis-ci.org/czerwonk/oSnap.svg)](https://travis-ci.org/czerwonk/oSnap)
 [![Go Report Card](https://goreportcard.com/badge/github.com/czerwonk/osnap)](https://goreportcard.com/report/github.com/czerwonk/osnap)
 
 Create virtual machine snapshots (using the oVirt API) with one single command
