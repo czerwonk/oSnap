@@ -9,11 +9,11 @@ import (
 	"github.com/czerwonk/osnap/api"
 )
 
-func purgeOldSnapshots(vms []*api.Vm, api *api.ApiClient) int {
+func purgeOldSnapshots(vms []api.Vm, api *api.ApiClient) int {
 	success := 0
 
 	for _, vm := range vms {
-		err := purgeVmSnapshots(vm, api)
+		err := purgeVmSnapshots(&vm, api)
 		if err != nil {
 			log.Printf("%s: Purging failed - %v\n", vm.Name, err)
 		} else {
