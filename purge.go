@@ -9,13 +9,13 @@ import (
 	"github.com/czerwonk/osnap/api"
 )
 
-func purgeOldSnapshots(snapshots []*api.Snapshot, api *api.ApiClient) int {
+func purgeOldSnapshots(vms []*api.Vm, api *api.ApiClient) int {
 	success := 0
 
-	for _, s := range snapshots {
-		err := purgeVmSnapshots(s, api)
+	for _, vm := range vms {
+		err := purgeVmSnapshots(vm, api)
 		if err != nil {
-			log.Printf("%s: Purging failed - %v\n", s.Vm.Name, err)
+			log.Printf("%s: Purging failed - %v\n", vm.Name, err)
 		} else {
 			success++
 		}
@@ -23,10 +23,10 @@ func purgeOldSnapshots(snapshots []*api.Snapshot, api *api.ApiClient) int {
 
 	return success
 }
-func purgeVmSnapshots(snapshot *api.Snapshot, a *api.ApiClient) error {
-	log.Printf("%s: Purging old snapshots\n", snapshot.Vm.Name)
+func purgeVmSnapshots(vm *api.Vm, a *api.ApiClient) error {
+	log.Printf("%s: Purging old snapshots\n", vm.Name)
 
-	snaps, err := a.GetCreatedSnapshots(snapshot.Vm.Id)
+	snaps, err := a.GetCreatedSnapshots(vm.Id)
 	if err != nil {
 		return err
 	}
@@ -35,9 +35,9 @@ func purgeVmSnapshots(snapshot *api.Snapshot, a *api.ApiClient) error {
 	d := l - 1 - *keep
 
 	if d > 0 {
-		return purgeSnapshots(snaps[0:d], &snapshot.Vm, a)
+		return purgeSnapshots(snaps[0:d], vm, a)
 	} else {
-		log.Printf("%s: Nothing to purge.\n", snapshot.Vm.Name)
+		log.Printf("%s: Nothing to purge.\n", vm.Name)
 	}
 
 	return nil

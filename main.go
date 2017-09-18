@@ -25,6 +25,7 @@ var (
 	desc            = flag.String("desc", "oSnap generated snapshot", "Description to use for the snapshot")
 	keep            = flag.Int("keep", 7, "Number of snapshots to keep")
 	debug           = flag.Bool("debug", false, "Prints API requests and responses to STDOUT")
+	purgeOnly       = flag.Bool("purge-only", false, "Only deleting old snapshots without creating a new one")
 )
 
 func init() {
@@ -43,7 +44,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	err := createSnapshots()
+	err := run()
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
@@ -56,7 +57,7 @@ func printVersion() {
 	fmt.Println("Author(s): Daniel Czerwonk")
 }
 
-func createSnapshots() error {
+func run() error {
 	a := api.NewClient(*apiUrl, *apiUser, *apiPass, *apiInsecureCert, *debug)
 
 	vms, err := a.GetVms(*cluster, *vm)
@@ -64,30 +65,52 @@ func createSnapshots() error {
 		return err
 	}
 
-	snapshots := make([]*api.Snapshot, 0)
-	for _, vm := range vms {
-		log.Printf("%s: Creating snapshot for VM", vm.Name)
-		s, err := a.CreateSnapshot(vm.Id, *desc)
-		if err != nil {
-			return err
-		}
-
-		snapshots = append(snapshots, s)
-		log.Printf("%s: Snapshot job created. (ID: %s)\n", vm.Name, s.Id)
+	var snapped []*api.Vm
+	if !*purgeOnly {
+		snapped, err = createSnapshots(vms, a)
 	}
 
-	snapshots = monitorSnapshotCreation(snapshots, a)
-	purgeSucceeded := purgeOldSnapshots(snapshots, a)
+	var success int
+	if *purgeOnly {
+		success = purgeOnlyForVms(vms, a)
+	} else {
+		success = purgeOldSnapshots(snapped, a)
+	}
 
-	if len(snapshots) != len(vms) || purgeSucceeded != len(vms) {
+	if success != len(vms) {
 		return errors.New("One or more errors occured. See output above for more detail.")
 	}
 
 	return nil
 }
 
-func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.ApiClient) []*api.Snapshot {
-	complete := make([]*api.Snapshot, 0)
+func purgeOnlyForVms(vms []api.Vm, a *api.ApiClient) int {
+	l := make([]*api.Vm, 0)
+	for _, v := range vms {
+		l = append(l, &v)
+	}
+
+	return purgeOldSnapshots(l, a)
+}
+
+func createSnapshots(vms []api.Vm, a *api.ApiClient) ([]*api.Vm, error) {
+	snapshots := make([]*api.Snapshot, 0)
+	for _, vm := range vms {
+		log.Printf("%s: Creating snapshot for VM", vm.Name)
+		s, err := a.CreateSnapshot(vm.Id, *desc)
+		if err != nil {
+			return nil, err
+		}
+
+		snapshots = append(snapshots, s)
+		log.Printf("%s: Snapshot job created. (ID: %s)\n", vm.Name, s.Id)
+	}
+
+	return monitorSnapshotCreation(snapshots, a), nil
+}
+
+func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.ApiClient) []*api.Vm {
+	complete := make([]*api.Vm, 0)
 
 	for _, s := range snapshots {
 		x, err := waitForCompletion(s, a)
@@ -95,7 +118,7 @@ func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.ApiClient) []*api
 			log.Printf("%s: Snapshot failed - %v)\n", s.Vm.Name, err)
 		} else {
 			log.Printf("%s: Snapshot completed\n", x.Vm.Name)
-			complete = append(complete, x)
+			complete = append(complete, &x.Vm)
 		}
 	}
 
