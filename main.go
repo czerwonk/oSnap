@@ -78,7 +78,7 @@ func run() error {
 	}
 
 	if success != len(vms) {
-		return errors.New("One or more errors occured. See output above for more detail.")
+		return errors.New("One or more errors occurred. See output above for more detail.")
 	}
 
 	return nil
