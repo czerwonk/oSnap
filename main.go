@@ -67,7 +67,7 @@ func run() error {
 
 	var snapped []api.Vm
 	if !*purgeOnly {
-		snapped, err = createSnapshots(vms, a)
+		snapped = createSnapshots(vms, a)
 	}
 
 	var success int
@@ -84,20 +84,20 @@ func run() error {
 	return nil
 }
 
-func createSnapshots(vms []api.Vm, a *api.ApiClient) ([]api.Vm, error) {
+func createSnapshots(vms []api.Vm, a *api.ApiClient) []api.Vm {
 	snapshots := make([]*api.Snapshot, 0)
 	for _, vm := range vms {
 		log.Printf("%s: Creating snapshot for VM", vm.Name)
 		s, err := a.CreateSnapshot(vm.Id, *desc)
 		if err != nil {
-			return nil, err
+			log.Printf("%s: Snapshot failed - %v)\n", vm.Name, err)
 		}
 
 		snapshots = append(snapshots, s)
 		log.Printf("%s: Snapshot job created. (ID: %s)\n", vm.Name, s.Id)
 	}
 
-	return monitorSnapshotCreation(snapshots, a), nil
+	return monitorSnapshotCreation(snapshots, a)
 }
 
 func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.ApiClient) []api.Vm {
