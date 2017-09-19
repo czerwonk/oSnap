@@ -12,7 +12,7 @@ import (
 	"github.com/czerwonk/osnap/api"
 )
 
-const version = "0.2.0"
+const version = "0.2.1"
 
 var (
 	showVersion     = flag.Bool("version", false, "Print version information")
