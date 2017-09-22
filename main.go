@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -9,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/czerwonk/osnap/api"
+	"github.com/czerwonk/oSnap/api"
 )
 
 const version = "0.2.1"
@@ -78,7 +77,7 @@ func run() error {
 	}
 
 	if success != len(vms) {
-		return errors.New("One or more errors occurred. See output above for more detail.")
+		return fmt.Errorf("One or more errors occurred. See output above for more detail.")
 	}
 
 	return nil
@@ -126,7 +125,7 @@ func waitForCompletion(snapshot *api.Snapshot, a *api.ApiClient) (*api.Snapshot,
 		}
 
 		if strings.HasPrefix(s.Status, "fail") || strings.HasPrefix(s.Status, "error") {
-			return nil, errors.New(s.Status)
+			return nil, fmt.Errorf(s.Status)
 		}
 
 		if s.Status == "ok" {

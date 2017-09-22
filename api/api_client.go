@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -72,7 +71,7 @@ func (c *ApiClient) getClusterId(name string) (string, error) {
 		}
 	}
 
-	return "", errors.New("Unknown cluster " + name)
+	return "", fmt.Errorf("Unknown cluster %s", name)
 }
 
 func (c *ApiClient) CreateSnapshot(vmId, desc string) (*Snapshot, error) {
@@ -160,7 +159,7 @@ func (c *ApiClient) sendRequest(path, method string, body io.Reader) ([]byte, er
 	}
 
 	if resp.StatusCode >= 300 {
-		return nil, errors.New(fmt.Sprintf(resp.Status))
+		return nil, fmt.Errorf(resp.Status)
 	}
 
 	defer resp.Body.Close()

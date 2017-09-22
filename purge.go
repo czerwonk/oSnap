@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/czerwonk/osnap/api"
+	"github.com/czerwonk/oSnap/api"
 )
 
 func purgeOldSnapshots(vms []api.Vm, api *api.ApiClient) int {
@@ -34,13 +34,12 @@ func purgeVmSnapshots(vm *api.Vm, a *api.ApiClient) error {
 	l := len(snaps)
 	d := l - 1 - *keep
 
-	if d > 0 {
-		return purgeSnapshots(snaps[0:d], vm, a)
-	} else {
+	if d < 1 {
 		log.Printf("%s: Nothing to purge.\n", vm.Name)
+		return nil
 	}
 
-	return nil
+	return purgeSnapshots(snaps[0:d], vm, a)
 }
 
 func purgeSnapshots(snapshots []api.Snapshot, vm *api.Vm, a *api.ApiClient) error {
@@ -70,7 +69,7 @@ func deleteSnapshot(s *api.Snapshot, vm *api.Vm, a *api.ApiClient) error {
 			return err
 		}
 
-		log.Println("Conflict occured. Retry in 60 seconds.")
+		log.Println("Conflict occurred. Retry in 60 seconds.")
 		try++
 		time.Sleep(1 * time.Minute)
 	}
