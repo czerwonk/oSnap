@@ -11,7 +11,7 @@ import (
 	"github.com/czerwonk/oSnap/api"
 )
 
-const version = "0.2.1"
+const version = "0.2.2"
 
 var (
 	showVersion     = flag.Bool("version", false, "Print version information")
@@ -57,7 +57,10 @@ func printVersion() {
 }
 
 func run() error {
-	a := api.NewClient(*apiUrl, *apiUser, *apiPass, *apiInsecureCert, *debug)
+	a, err := api.New(*apiUrl, *apiUser, *apiPass, *apiInsecureCert, *debug)
+	if err != nil {
+		return err
+	}
 
 	vms, err := a.GetVms(*cluster, *vm)
 	if err != nil {
@@ -83,7 +86,7 @@ func run() error {
 	return nil
 }
 
-func createSnapshots(vms []api.Vm, a *api.ApiClient) []api.Vm {
+func createSnapshots(vms []api.Vm, a *api.Api) []api.Vm {
 	snapshots := make([]*api.Snapshot, 0)
 	for _, vm := range vms {
 		log.Printf("%s: Creating snapshot for VM", vm.Name)
@@ -99,7 +102,7 @@ func createSnapshots(vms []api.Vm, a *api.ApiClient) []api.Vm {
 	return monitorSnapshotCreation(snapshots, a)
 }
 
-func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.ApiClient) []api.Vm {
+func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.Api) []api.Vm {
 	complete := make([]api.Vm, 0)
 
 	for _, s := range snapshots {
@@ -115,7 +118,7 @@ func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.ApiClient) []api.
 	return complete
 }
 
-func waitForCompletion(snapshot *api.Snapshot, a *api.ApiClient) (*api.Snapshot, error) {
+func waitForCompletion(snapshot *api.Snapshot, a *api.Api) (*api.Snapshot, error) {
 	log.Printf("Waiting for snapshot %s to finish...\n", snapshot.Id)
 
 	for {

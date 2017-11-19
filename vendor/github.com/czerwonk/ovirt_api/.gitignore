@@ -13,7 +13,8 @@
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
 
-.idea
+# IDE specific files
+.idea/
 *.iml
 
-oSnap
+vendor/github.com/imjoey/go-ovirt/examples

@@ -9,7 +9,7 @@ import (
 	"github.com/czerwonk/oSnap/api"
 )
 
-func purgeOldSnapshots(vms []api.Vm, api *api.ApiClient) int {
+func purgeOldSnapshots(vms []api.Vm, api *api.Api) int {
 	success := 0
 
 	for _, vm := range vms {
@@ -23,7 +23,7 @@ func purgeOldSnapshots(vms []api.Vm, api *api.ApiClient) int {
 
 	return success
 }
-func purgeVmSnapshots(vm *api.Vm, a *api.ApiClient) error {
+func purgeVmSnapshots(vm *api.Vm, a *api.Api) error {
 	log.Printf("%s: Purging old snapshots\n", vm.Name)
 
 	snaps, err := a.GetCreatedSnapshots(vm.Id)
@@ -42,7 +42,7 @@ func purgeVmSnapshots(vm *api.Vm, a *api.ApiClient) error {
 	return purgeSnapshots(snaps[0:d], vm, a)
 }
 
-func purgeSnapshots(snapshots []api.Snapshot, vm *api.Vm, a *api.ApiClient) error {
+func purgeSnapshots(snapshots []api.Snapshot, vm *api.Vm, a *api.Api) error {
 	log.Printf("%s: Purging %v old snapshots...\n", vm.Name, len(snapshots))
 
 	for _, s := range snapshots {
@@ -55,7 +55,7 @@ func purgeSnapshots(snapshots []api.Snapshot, vm *api.Vm, a *api.ApiClient) erro
 	return nil
 }
 
-func deleteSnapshot(s *api.Snapshot, vm *api.Vm, a *api.ApiClient) error {
+func deleteSnapshot(s *api.Snapshot, vm *api.Vm, a *api.Api) error {
 	log.Printf("%s: Delete snapshot %s\n", vm.Name, s.Id)
 
 	try := 0
