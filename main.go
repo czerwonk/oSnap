@@ -8,10 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"regexp"
+
 	"github.com/czerwonk/oSnap/api"
 )
 
-const version = "0.2.2"
+const version = "0.3.0"
 
 var (
 	showVersion     = flag.Bool("version", false, "Print version information")
@@ -20,7 +22,8 @@ var (
 	apiPass         = flag.String("api.pass", "", "API password")
 	apiInsecureCert = flag.Bool("api.insecure-cert", false, "Skip verification for untrusted SSL/TLS certificates")
 	cluster         = flag.String("cluster", "", "Cluster name to filter")
-	vm              = flag.String("vm", "", "VM name to filter")
+	vm              = flag.String("vm", "", "VM name(s) to snapshot (regex)")
+	skip            = flag.String("skip", "", "VM name(s) to skip (regex)")
 	desc            = flag.String("desc", "oSnap generated snapshot", "Description to use for the snapshot")
 	keep            = flag.Int("keep", 7, "Number of snapshots to keep")
 	debug           = flag.Bool("debug", false, "Prints API requests and responses to STDOUT")
@@ -29,7 +32,7 @@ var (
 
 func init() {
 	flag.Usage = func() {
-		fmt.Println("Usage: osnap [ ... ]\n\nParameters:")
+		fmt.Println("Usage: oSnap [ ... ]\n\nParameters:")
 		fmt.Println()
 		flag.PrintDefaults()
 	}
@@ -57,12 +60,12 @@ func printVersion() {
 }
 
 func run() error {
-	a, err := api.New(*apiUrl, *apiUser, *apiPass, *apiInsecureCert, *debug)
+	a, err := getApi()
 	if err != nil {
 		return err
 	}
 
-	vms, err := a.GetVms(*cluster, *vm)
+	vms, err := a.GetVms()
 	if err != nil {
 		return err
 	}
@@ -84,6 +87,31 @@ func run() error {
 	}
 
 	return nil
+}
+
+func getApi() (*api.Api, error) {
+	a, err := api.New(*apiUrl, *apiUser, *apiPass, *apiInsecureCert, *debug)
+	if err != nil {
+		return nil, err
+	}
+
+	a.ClusterFilter = *cluster
+
+	if len(*vm) > 0 {
+		a.VmFilter, err = regexp.Compile(*vm)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(*skip) > 0 {
+		a.SkipFilter, err = regexp.Compile(*skip)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return a, nil
 }
 
 func createSnapshots(vms []api.Vm, a *api.Api) []api.Vm {

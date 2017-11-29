@@ -7,12 +7,17 @@ import (
 	"log"
 	"strings"
 
+	"regexp"
+
 	"github.com/czerwonk/ovirt_api"
 )
 
 type Api struct {
-	debug  bool
-	client *ovirt_api.ApiClient
+	debug         bool
+	client        *ovirt_api.ApiClient
+	ClusterFilter string
+	VmFilter      *regexp.Regexp
+	SkipFilter    *regexp.Regexp
 }
 
 const snapshotSuffix = " - created by oSnap"
@@ -28,8 +33,8 @@ func New(url, user, pass string, insecureCert, debug bool) (*Api, error) {
 	return &Api{client: c, debug: debug}, nil
 }
 
-func (c *Api) GetVms(clusterFilter, vmFilter string) ([]Vm, error) {
-	clusterId, err := c.getClusterId(clusterFilter)
+func (c *Api) GetVms() ([]Vm, error) {
+	clusterId, err := c.getClusterId(c.ClusterFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -42,12 +47,24 @@ func (c *Api) GetVms(clusterFilter, vmFilter string) ([]Vm, error) {
 
 	res := make([]Vm, 0)
 	for _, v := range vms.Vm {
-		if (v.Cluster.Id == clusterId || len(clusterFilter) == 0) && (v.Name == vmFilter || len(vmFilter) == 0) {
+		if (v.Cluster.Id == clusterId || len(c.ClusterFilter) == 0) && c.shouldProcessVm(v.Name) {
 			res = append(res, v)
 		}
 	}
 
 	return res, nil
+}
+
+func (c *Api) shouldProcessVm(name string) bool {
+	if c.SkipFilter != nil && c.SkipFilter.MatchString(name) {
+		return false
+	}
+
+	if c.VmFilter != nil {
+		return c.VmFilter.MatchString(name)
+	}
+
+	return true
 }
 
 func (c *Api) getClusterId(name string) (string, error) {
