@@ -1,13 +1,13 @@
 package api
 
 type Vms struct {
-	Vm []Vm `xml:"vm"`
+	VM []Vm `xml:"vm"`
 }
 
 type Vm struct {
-	Id      string `xml:"id,attr,omitempty"`
+	ID      string `xml:"id,attr,omitempty"`
 	Name    string `xml:"name,omitempty"`
 	Cluster struct {
-		Id string `xml:"id,attr"`
+		ID string `xml:"id,attr"`
 	} `xml:"cluster,omitempty"`
 }

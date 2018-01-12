@@ -5,6 +5,6 @@ type Clusters struct {
 }
 
 type Cluster struct {
-	Id   string `xml:"id,attr"`
+	ID   string `xml:"id,attr"`
 	Name string `xml:"name"`
 }

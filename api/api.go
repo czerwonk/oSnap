@@ -9,14 +9,14 @@ import (
 
 	"regexp"
 
-	"github.com/czerwonk/ovirt_api"
+	ovirt_api "github.com/czerwonk/ovirt_api/api"
 )
 
 type Api struct {
 	debug         bool
-	client        *ovirt_api.ApiClient
+	client        *ovirt_api.Client
 	ClusterFilter string
-	VmFilter      *regexp.Regexp
+	VMFilter      *regexp.Regexp
 	SkipFilter    *regexp.Regexp
 }
 
@@ -46,8 +46,8 @@ func (c *Api) GetVms() ([]Vm, error) {
 	}
 
 	res := make([]Vm, 0)
-	for _, v := range vms.Vm {
-		if (v.Cluster.Id == clusterId || len(c.ClusterFilter) == 0) && c.shouldProcessVm(v.Name) {
+	for _, v := range vms.VM {
+		if (v.Cluster.ID == clusterId || len(c.ClusterFilter) == 0) && c.shouldProcessVm(v.Name) {
 			res = append(res, v)
 		}
 	}
@@ -60,8 +60,8 @@ func (c *Api) shouldProcessVm(name string) bool {
 		return false
 	}
 
-	if c.VmFilter != nil {
-		return c.VmFilter.MatchString(name)
+	if c.VMFilter != nil {
+		return c.VMFilter.MatchString(name)
 	}
 
 	return true
@@ -80,7 +80,7 @@ func (c *Api) getClusterId(name string) (string, error) {
 
 	for _, cluster := range clusters.Cluster {
 		if cluster.Name == name {
-			return cluster.Id, nil
+			return cluster.ID, nil
 		}
 	}
 

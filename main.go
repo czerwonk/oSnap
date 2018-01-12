@@ -17,7 +17,7 @@ const version = "0.3.0"
 
 var (
 	showVersion     = flag.Bool("version", false, "Print version information")
-	apiUrl          = flag.String("api.url", "https://localhost/ovirt-engine/api/", "API REST Endpoint")
+	apiURL          = flag.String("api.url", "https://localhost/ovirt-engine/api/", "API REST Endpoint")
 	apiUser         = flag.String("api.user", "user@internal", "API username")
 	apiPass         = flag.String("api.pass", "", "API password")
 	apiInsecureCert = flag.Bool("api.insecure-cert", false, "Skip verification for untrusted SSL/TLS certificates")
@@ -60,7 +60,7 @@ func printVersion() {
 }
 
 func run() error {
-	a, err := getApi()
+	a, err := getAPI()
 	if err != nil {
 		return err
 	}
@@ -89,8 +89,8 @@ func run() error {
 	return nil
 }
 
-func getApi() (*api.Api, error) {
-	a, err := api.New(*apiUrl, *apiUser, *apiPass, *apiInsecureCert, *debug)
+func getAPI() (*api.Api, error) {
+	a, err := api.New(*apiURL, *apiUser, *apiPass, *apiInsecureCert, *debug)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func getApi() (*api.Api, error) {
 	a.ClusterFilter = *cluster
 
 	if len(*vm) > 0 {
-		a.VmFilter, err = regexp.Compile(*vm)
+		a.VMFilter, err = regexp.Compile(*vm)
 		if err != nil {
 			return nil, err
 		}
@@ -118,13 +118,13 @@ func createSnapshots(vms []api.Vm, a *api.Api) []api.Vm {
 	snapshots := make([]*api.Snapshot, 0)
 	for _, vm := range vms {
 		log.Printf("%s: Creating snapshot for VM", vm.Name)
-		s, err := a.CreateSnapshot(vm.Id, *desc)
+		s, err := a.CreateSnapshot(vm.ID, *desc)
 		if err != nil {
 			log.Printf("%s: Snapshot failed - %v)\n", vm.Name, err)
 		}
 
 		snapshots = append(snapshots, s)
-		log.Printf("%s: Snapshot job created. (ID: %s)\n", vm.Name, s.Id)
+		log.Printf("%s: Snapshot job created. (ID: %s)\n", vm.Name, s.ID)
 	}
 
 	return monitorSnapshotCreation(snapshots, a)
@@ -136,10 +136,10 @@ func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.Api) []api.Vm {
 	for _, s := range snapshots {
 		x, err := waitForCompletion(s, a)
 		if err != nil {
-			log.Printf("%s: Snapshot failed - %v)\n", s.Vm.Name, err)
+			log.Printf("%s: Snapshot failed - %v)\n", s.VM.Name, err)
 		} else {
-			log.Printf("%s: Snapshot completed\n", x.Vm.Name)
-			complete = append(complete, x.Vm)
+			log.Printf("%s: Snapshot completed\n", x.VM.Name)
+			complete = append(complete, x.VM)
 		}
 	}
 
@@ -147,10 +147,10 @@ func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.Api) []api.Vm {
 }
 
 func waitForCompletion(snapshot *api.Snapshot, a *api.Api) (*api.Snapshot, error) {
-	log.Printf("Waiting for snapshot %s to finish...\n", snapshot.Id)
+	log.Printf("Waiting for snapshot %s to finish...\n", snapshot.ID)
 
 	for {
-		s, err := a.GetSnapshot(snapshot.Vm.Id, snapshot.Id)
+		s, err := a.GetSnapshot(snapshot.VM.ID, snapshot.ID)
 		if err != nil {
 			return nil, err
 		}

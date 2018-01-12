@@ -26,7 +26,7 @@ func purgeOldSnapshots(vms []api.Vm, api *api.Api) int {
 func purgeVmSnapshots(vm *api.Vm, a *api.Api) error {
 	log.Printf("%s: Purging old snapshots\n", vm.Name)
 
-	snaps, err := a.GetCreatedSnapshots(vm.Id)
+	snaps, err := a.GetCreatedSnapshots(vm.ID)
 	if err != nil {
 		return err
 	}
@@ -56,11 +56,11 @@ func purgeSnapshots(snapshots []api.Snapshot, vm *api.Vm, a *api.Api) error {
 }
 
 func deleteSnapshot(s *api.Snapshot, vm *api.Vm, a *api.Api) error {
-	log.Printf("%s: Delete snapshot %s\n", vm.Name, s.Id)
+	log.Printf("%s: Delete snapshot %s\n", vm.Name, s.ID)
 
 	try := 0
 	for try < 10 {
-		err := a.DeleteSnapshot(vm.Id, s.Id)
+		err := a.DeleteSnapshot(vm.ID, s.ID)
 		if err == nil {
 			return nil
 		}
