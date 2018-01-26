@@ -23,12 +23,19 @@ type Api struct {
 const snapshotSuffix = " - created by oSnap"
 
 func New(url, user, pass string, insecureCert, debug bool) (*Api, error) {
-	c, err := ovirt_api.NewClient(url, user, pass, insecureCert)
+	opts := []ovirt_api.ClientOption{}
+	if insecureCert {
+		opts = append(opts, ovirt_api.WithInsecure())
+	}
+
+	if debug {
+		opts = append(opts, ovirt_api.WithDebug())
+	}
+
+	c, err := ovirt_api.NewClient(url, user, pass, opts...)
 	if err != nil {
 		return nil, err
 	}
-
-	c.Debug = debug
 
 	return &Api{client: c, debug: debug}, nil
 }
