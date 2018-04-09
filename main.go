@@ -1,33 +1,27 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"time"
 
-	"regexp"
-
 	"github.com/czerwonk/oSnap/api"
+	"github.com/czerwonk/oSnap/config"
 )
 
-const version = "0.3.0"
+const version = "0.4.0"
 
 var (
-	showVersion     = flag.Bool("version", false, "Print version information")
-	apiURL          = flag.String("api.url", "https://localhost/ovirt-engine/api/", "API REST Endpoint")
-	apiUser         = flag.String("api.user", "user@internal", "API username")
-	apiPass         = flag.String("api.pass", "", "API password")
-	apiInsecureCert = flag.Bool("api.insecure-cert", false, "Skip verification for untrusted SSL/TLS certificates")
-	cluster         = flag.String("cluster", "", "Cluster name to filter")
-	vm              = flag.String("vm", "", "VM name(s) to snapshot (regex)")
-	skip            = flag.String("skip", "", "VM name(s) to skip (regex)")
-	desc            = flag.String("desc", "oSnap generated snapshot", "Description to use for the snapshot")
-	keep            = flag.Int("keep", 7, "Number of snapshots to keep")
-	debug           = flag.Bool("debug", false, "Prints API requests and responses to STDOUT")
-	purgeOnly       = flag.Bool("purge-only", false, "Only deleting old snapshots without creating a new one")
+	showVersion = flag.Bool("version", false, "Print version information")
+	configFile  = flag.String("config.file", "config.yml", "Path to config file")
+	debug       = flag.Bool("debug", false, "Prints API requests and responses to STDOUT")
+	purgeOnly   = flag.Bool("purge-only", false, "Only deleting old snapshots without creating a new one")
+	dry         = flag.Bool("dry", false, "Print names of VMs instead of creating actual snapshots")
 )
 
 func init() {
@@ -46,11 +40,26 @@ func main() {
 		os.Exit(0)
 	}
 
-	err := run()
+	cfg, err := loadConfig()
+	if err != nil {
+		log.Println("could not load config file.", err)
+		os.Exit(2)
+	}
+
+	err = run(cfg)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
+}
+
+func loadConfig() (*config.Config, error) {
+	b, err := ioutil.ReadFile(*configFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return config.Load(bytes.NewReader(b))
 }
 
 func printVersion() {
@@ -59,27 +68,31 @@ func printVersion() {
 	fmt.Println("Author(s): Daniel Czerwonk")
 }
 
-func run() error {
-	a, err := getAPI()
+func run(cfg *config.Config) error {
+	client, err := connectAPI(cfg)
 	if err != nil {
 		return err
 	}
 
-	vms, err := a.GetVms()
+	vms, err := client.GetVMs()
 	if err != nil {
 		return err
 	}
 
 	var snapped []api.Vm
 	if !*purgeOnly {
-		snapped = createSnapshots(vms, a)
+		snapped = createSnapshots(vms, cfg, client)
+	}
+
+	if *dry {
+		return nil
 	}
 
 	var success int
 	if *purgeOnly {
-		success = purgeOldSnapshots(vms, a)
+		success = purgeOldSnapshots(vms, cfg, client)
 	} else {
-		success = purgeOldSnapshots(snapped, a)
+		success = purgeOldSnapshots(snapped, cfg, client)
 	}
 
 	if success != len(vms) {
@@ -89,36 +102,30 @@ func run() error {
 	return nil
 }
 
-func getAPI() (*api.Api, error) {
-	a, err := api.New(*apiURL, *apiUser, *apiPass, *apiInsecureCert, *debug)
+func connectAPI(cfg *config.Config) (*api.Client, error) {
+	opts := []api.Option{
+		api.WithClusterFilter(cfg.Cluster),
+		api.WithIncludes(cfg.Includes),
+		api.WithExcludes(cfg.Excludes),
+	}
+
+	client, err := api.NewClient(cfg.API.URL, cfg.API.User, cfg.API.Password, cfg.API.Insecure, *debug, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	a.ClusterFilter = *cluster
-
-	if len(*vm) > 0 {
-		a.VMFilter, err = regexp.Compile(*vm)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if len(*skip) > 0 {
-		a.SkipFilter, err = regexp.Compile(*skip)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return a, nil
+	return client, nil
 }
 
-func createSnapshots(vms []api.Vm, a *api.Api) []api.Vm {
+func createSnapshots(vms []api.Vm, cfg *config.Config, a *api.Client) []api.Vm {
 	snapshots := make([]*api.Snapshot, 0)
 	for _, vm := range vms {
 		log.Printf("%s: Creating snapshot for VM", vm.Name)
-		s, err := a.CreateSnapshot(vm.ID, *desc)
+		if *dry {
+			continue
+		}
+
+		s, err := a.CreateSnapshot(vm.ID, cfg.Description)
 		if err != nil {
 			log.Printf("%s: Snapshot failed - %v)\n", vm.Name, err)
 		}
@@ -130,11 +137,11 @@ func createSnapshots(vms []api.Vm, a *api.Api) []api.Vm {
 	return monitorSnapshotCreation(snapshots, a)
 }
 
-func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.Api) []api.Vm {
+func monitorSnapshotCreation(snapshots []*api.Snapshot, client *api.Client) []api.Vm {
 	complete := make([]api.Vm, 0)
 
 	for _, s := range snapshots {
-		x, err := waitForCompletion(s, a)
+		x, err := waitForCompletion(s, client)
 		if err != nil {
 			log.Printf("%s: Snapshot failed - %v)\n", s.VM.Name, err)
 		} else {
@@ -146,11 +153,11 @@ func monitorSnapshotCreation(snapshots []*api.Snapshot, a *api.Api) []api.Vm {
 	return complete
 }
 
-func waitForCompletion(snapshot *api.Snapshot, a *api.Api) (*api.Snapshot, error) {
+func waitForCompletion(snapshot *api.Snapshot, client *api.Client) (*api.Snapshot, error) {
 	log.Printf("Waiting for snapshot %s to finish...\n", snapshot.ID)
 
 	for {
-		s, err := a.GetSnapshot(snapshot.VM.ID, snapshot.ID)
+		s, err := client.GetSnapshot(snapshot.VM.ID, snapshot.ID)
 		if err != nil {
 			return nil, err
 		}

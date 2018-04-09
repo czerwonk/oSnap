@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/czerwonk/ovirt_api"
   packages = ["api"]
-  revision = "2fb93b9160cd56ea3f21e806c9a809694bc94db7"
+  revision = "63e3f014686cc5c23c6d2dbcdb95cc2d3351ff99"
 
 [solve-meta]
   analyzer-name = "dep"

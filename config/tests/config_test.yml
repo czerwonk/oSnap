@@ -1,0 +1,16 @@
+api:
+  url: https://my-ovirt.net
+  user: my-osnap-user
+  password: my-pass
+  insecure: true
+
+cluster: my-cluster
+keep: 3
+
+includes:
+  - web.*
+  - app.*
+ 
+excludes:
+  - db.*
+  - temp.*
