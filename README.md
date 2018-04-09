@@ -4,9 +4,6 @@
 
 Create virtual machine snapshots (using the oVirt API) with one single command
 
-## Remarks
-this is an early version
-
 ## Install
 ```
 go get -u github.com/czerwonk/osnap
