@@ -9,6 +9,27 @@ Create virtual machine snapshots (using the oVirt API) with one single command
 go get -u github.com/czerwonk/osnap
 ```
 
+## Configuration
+oSnap is configured by a YAML based config file:
+
+```yaml
+api:
+  url: https://my-ovirt.net
+  user: my-osnap-user
+  password: my-pass
+
+cluster: my-cluster
+keep: 3
+
+includes:
+  - web.*
+  - app.*
+ 
+excludes:
+  - db.*
+  - temp.*
+```
+
 ## License
 (c) Daniel Czerwonk, 2017. Licensed under [MIT](LICENSE) license.
 
