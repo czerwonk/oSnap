@@ -105,10 +105,8 @@ func (c *Client) GetVMs() ([]Vm, error) {
 }
 
 func (c *Client) shouldProcessVM(name string) bool {
-	for _, include := range c.includes {
-		if include.MatchString(name) {
-			return true
-		}
+	if len(c.includes) == 0 && len(c.excludes) == 0 {
+		return true
 	}
 
 	for _, exclude := range c.excludes {
@@ -117,7 +115,13 @@ func (c *Client) shouldProcessVM(name string) bool {
 		}
 	}
 
-	return true
+	for _, include := range c.includes {
+		if include.MatchString(name) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (c *Client) getClusterID(name string) (string, error) {
