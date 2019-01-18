@@ -3,10 +3,9 @@ package config
 import (
 	"bytes"
 	"io/ioutil"
-	"reflect"
 	"testing"
 
-	"github.com/czerwonk/testutils/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseConfig(t *testing.T) {
@@ -20,21 +19,18 @@ func TestParseConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.StringEqual("cluster", "my-cluster", cfg.Cluster, t)
-	assert.IntEqual("keep", 3, cfg.Keep, t)
-
-	assert.StringEqual("api.url", "https://my-ovirt.net", cfg.API.URL, t)
-	assert.StringEqual("api.username", "my-osnap-user", cfg.API.User, t)
-	assert.StringEqual("api.password", "my-pass", cfg.API.Password, t)
-	assert.True("api.insecure", cfg.API.Insecure, t)
-
-	includes := []string{"web.*", "app.*"}
-	if !reflect.DeepEqual(includes, cfg.Includes) {
-		t.Fatalf("expected includes %v, but got %v", includes, cfg.Includes)
+	expected := &Config{
+		Cluster: "my-cluster",
+		Keep:    3,
+		API: &APIConfig{
+			URL:      "https://my-ovirt.net",
+			User:     "my-osnap-user",
+			Password: "my-pass",
+			Insecure: true,
+		},
+		Includes: []string{"web.*", "app.*"},
+		Excludes: []string{"db.*", "temp.*"},
 	}
 
-	excludes := []string{"db.*", "temp.*"}
-	if !reflect.DeepEqual(excludes, cfg.Excludes) {
-		t.Fatalf("expected excludes %v, but got %v", excludes, cfg.Excludes)
-	}
+	assert.Equal(t, expected, cfg)
 }
